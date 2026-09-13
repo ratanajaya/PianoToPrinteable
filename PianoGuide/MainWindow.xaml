@@ -1,0 +1,170 @@
+<Window x:Class="PianoGuide.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Printable Piano Guide" Width="1180" Height="810" MinWidth="900" MinHeight="650"
+        Background="#F4F7FB" FontFamily="Segoe UI" Foreground="#1F2A39">
+    <Window.Resources>
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="13,7"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Background" Value="#E5ECF5"/>
+            <Setter Property="BorderBrush" Value="#CBD6E4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#2567B2"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#2567B2"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="7,5"/>
+            <Setter Property="BorderBrush" Value="#BCCADA"/>
+        </Style>
+    </Window.Resources>
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#172B46" Padding="22,15">
+            <StackPanel>
+                <TextBlock Text="Printable Piano Guide" Foreground="White" FontSize="23" FontWeight="SemiBold"/>
+                <TextBlock Text="Turn video moments and MIDI key presses into a guide you can print."
+                           Foreground="#BBD0E7" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="#D9E2EC"
+                BorderThickness="0,1,0,0" Padding="16,9">
+            <TextBlock x:Name="StatusText" Text="Open a video or MIDI file to begin." Foreground="#53677F"/>
+        </Border>
+        <TabControl Margin="14" FontSize="13">
+            <TabItem Header="Video frames">
+                <Grid Margin="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Content="Open video..." Click="OpenVideo_Click"/>
+                        <TextBlock x:Name="VideoFileText" Text="No video selected" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="820" Foreground="#53677F"/>
+                    </StackPanel>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="290"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#0D1522" CornerRadius="5" ClipToBounds="True">
+                            <Grid x:Name="VideoSurface" SizeChanged="VideoSurface_SizeChanged">
+                                <MediaElement x:Name="Player" LoadedBehavior="Manual" UnloadedBehavior="Close"
+                                              Stretch="Uniform" MediaOpened="Player_MediaOpened"
+                                              MediaFailed="Player_MediaFailed" MediaEnded="Player_MediaEnded"/>
+                                <Canvas x:Name="CropCanvas" Background="Transparent"
+                                        MouseLeftButtonDown="CropCanvas_MouseLeftButtonDown"
+                                        MouseMove="CropCanvas_MouseMove"
+                                        MouseLeftButtonUp="CropCanvas_MouseLeftButtonUp">
+                                    <Rectangle x:Name="CropOutline" Stroke="#FFD24A" StrokeThickness="2"
+                                               Fill="#18FFD24A" IsHitTestVisible="False"/>
+                                </Canvas>
+                                <TextBlock x:Name="VideoHint" Text="Open a video to preview it"
+                                           Foreground="White" FontSize="17" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+                        <Border Grid.Column="1" Background="White" BorderBrush="#D9E2EC"
+                                BorderThickness="1" Margin="12,0,0,0" Padding="13">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Selected moments" FontWeight="SemiBold"
+                                           FontSize="16" Margin="0,0,0,8"/>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                    <TextBlock Text="Edit timestamp (mm:ss.fff)" Foreground="#53677F" Margin="0,10,0,3"/>
+                                    <TextBox x:Name="MarkTimeText"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Content="Update" Click="UpdateMark_Click"/>
+                                        <Button Content="Remove" Click="RemoveMark_Click"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Drag over the picture to set one crop for every frame."
+                                               TextWrapping="Wrap" Foreground="#53677F" Margin="0,13,0,6"/>
+                                    <Button Content="Use full frame" Click="ResetCrop_Click"
+                                            HorizontalAlignment="Left"/>
+                                </StackPanel>
+                                <ListBox x:Name="MarksList" SelectionChanged="MarksList_SelectionChanged"
+                                         FontSize="14"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                    <StackPanel Grid.Row="2" Margin="0,11,0,9">
+                        <Slider x:Name="VideoSlider" Minimum="0" Maximum="1"
+                                PreviewMouseLeftButtonUp="VideoSlider_MouseUp"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button x:Name="PlayButton" Content="Play / Pause" Click="PlayPause_Click"/>
+                            <Button Content="-0.1 s" Click="BackFrame_Click"/>
+                            <Button Content="+0.1 s" Click="ForwardFrame_Click"/>
+                            <Button Content="Add frame" Style="{StaticResource PrimaryButton}"
+                                    Click="AddFrame_Click"/>
+                            <TextBlock x:Name="CurrentTimeText" Text="00:00.000 / 00:00.000"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="ExportVideoButton" Content="Export video PDF..."
+                                Style="{StaticResource PrimaryButton}" Click="ExportVideo_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="MIDI steps">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                        <Button Content="Open MIDI..." Click="OpenMidi_Click"/>
+                        <TextBlock x:Name="MidiFileText" Text="No MIDI selected" VerticalAlignment="Center"
+                                   Foreground="#53677F" TextTrimming="CharacterEllipsis" MaxWidth="820"/>
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="White" BorderBrush="#D9E2EC" BorderThickness="1"
+                            Padding="17" Margin="0,0,0,14">
+                        <StackPanel>
+                            <TextBlock Text="Step-by-step keyboard guide" FontSize="20" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="MidiSummaryText" Text="Open a MIDI file to see its notes and tracks."
+                                       Foreground="#53677F" Margin="0,6,0,0"/>
+                            <TextBlock Text="Each new key press makes a step. Simultaneous presses share a step; pale keys are still held."
+                                       Foreground="#53677F" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Row="2" Background="White" BorderBrush="#D9E2EC" BorderThickness="1" Padding="17">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock Text="Assign hands to note tracks" FontSize="16" FontWeight="SemiBold"/>
+                                <TextBlock Text="Track names containing “left” or “right” are assigned automatically. Correct any track below."
+                                           Foreground="#53677F" Margin="0,4,0,12" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="TrackPanel"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Row="3" Background="White" BorderBrush="#D9E2EC" BorderThickness="1"
+                            Padding="17" Margin="0,14,0,0">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" x:Name="ExportMidiButton" Content="Export MIDI PDF..."
+                                    Style="{StaticResource PrimaryButton}" Click="ExportMidi_Click"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Practice range" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           Margin="0,0,14,0"/>
+                                <TextBlock Text="Start" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox x:Name="MidiStartText" Width="100" Text="00:00.000"/>
+                                <TextBlock Text="End" VerticalAlignment="Center" Margin="15,0,6,0"/>
+                                <TextBox x:Name="MidiEndText" Width="100" Text="00:00.000"/>
+                                <TextBlock Text="6 steps per A4 landscape page" Foreground="#53677F"
+                                           VerticalAlignment="Center" Margin="19,0,0,0"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PianoGuide.Smoke/PianoGuide.Smoke.csproj" />
+  <Project Path="PianoGuide/PianoGuide.csproj" />
+</Solution>
